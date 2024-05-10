@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del cálculo del Tiempo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Resultado del cálculo del Tiempo</h1>
+        <p style="color: greenyellow;" class="text">Capital: {{ capital }}</p>
+        <p style="color: greenyellow;" class="text">Interés: {{ interes }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de Interés (%): {{ tasa_interes }}</p>
+        <p style="color: greenyellow;" class="text">Tiempo: {{años}} años, {{ meses }} meses y {{dias}} días </p>
+        <a style="color: greenyellow;" href="/calcular_tiempo" class="button">Volver a Calcular Tiempo</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>

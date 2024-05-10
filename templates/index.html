@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>Calculadora Financiera</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Referencia al archivo JavaScript -->
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script> 
+</head>
+<body>
+    <div class="container">
+        
+        <h1 class="titulo_color">Calculadora Financiera</h1>
+        <style>
+
+            .body {
+            background-image: url("/static/img/grafico.png");
+            font-family: Arial, sans-serif;
+            margin: 100;
+            height: 60;
+            background-size: 50% 50%;
+            overflow: hidden;/* Reduce el tamaño de la imagen a la mitad */
+            }
+
+
+            .container {
+                     /* Establece el color de fondo para todo el aplicativo */
+                    /* Puedes ajustar este color según tus preferencias */
+                    /* También puedes utilizar una imagen de fondo aquí si lo deseas */
+                    min-height: 25vh; /* Garantiza que el contenedor ocupe al menos el 100% del alto de la ventana */
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+            .menu {
+                position: relative;
+                display: inline-block;
+                width: 130%
+            }
+
+            .submenu {
+                display: none;
+                position: absolute;
+                top: 100%; /* Ajusta la distancia desde la parte superior */
+                left: 0;
+                margin-top: 5px; /* Ajusta la posición para alinearlo con el botón */
+                min-width: 160px;
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+                z-index: 1;
+                background-color: #fff;
+            }
+        
+            .menu-btn:hover + .submenu,
+            .submenu:hover {
+                display: block;
+            }
+        
+            .submenu a {
+                display: block;
+                padding: 8px;
+                text-decoration: none;
+                color: #333;
+            }
+        
+            .submenu a:hover {
+                background-color: #f1f1f1;
+            }
+
+        .sidebar-left
+         {
+            margin: 50px; /* Ajusta los márgenes según tus necesidades */
+            padding: 40px; /* Ajusta el relleno según tus necesidades */
+            background-color: #336eff;
+            float: left;
+            clear: left;
+            text-align: left;
+            
+            /* Ajusta el color de fondo según tus necesidades */
+        }
+
+        .sidebar-right
+         {
+            margin: 50px; /* Ajusta los márgenes según tus necesidades */
+            padding: 35px; /* Ajusta el relleno según tus necesidades */
+            background-color: #27c03f;
+            float: right;
+            clear: right;
+            text-align: left;/* Ajusta el color de fondo según tus necesidades */
+        }
+
+        .footer
+         {
+            margin: 50px; /* Ajusta los márgenes según tus necesidades */
+            padding: 53px; /* Ajusta el relleno según tus necesidades */
+            background-color: #f33131;
+            float: bottom;
+            clear: bottom;
+            text-align: left;/* Ajusta el color de fondo según tus necesidades */
+        }
+
+
+
+        .sidebar-left,
+        .sidebar-right
+        {
+            width: 30%; /* Ajusta el ancho de los laterales según tus necesidades */
+        }
+
+       
+        </style>
+        <div class="menu">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Interés simple
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" href="/calcular_valor_futuro">Calcular Valor Futuro</a>
+                  <a class="dropdown-item" href="/calcular_capital">Calcular Capital</a>
+                  <a class="dropdown-item" href="/calcular_interes">Calcular Interés</a>
+                  <a class="dropdown-item" href="/calcular_tiempo">Calcular Tiempo</a>
+                  <div class="dropdown-divider"></div>
+                </div>
+            </div>
+                    
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Interés Compuesto
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" href="/interes_compuesto">Calcular Interés Compuesto</a>
+                  <a class="dropdown-item" href="/monto_compuesto">Calcular Monto Compuesto</a>
+                  <a class="dropdown-item" href="/tiempo_compuesto">Calcular Tiempo</a>
+                  <a class="dropdown-item" href="/capital_compuesto">Calcular Capital</a>
+                  <div class="dropdown-divider"></div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Anualidades
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" href="/anual_valor_futuro">Calcular Valor Futuro</a>
+                  <a class="dropdown-item" href="/anual_valor_presente">Calcular Valor Actual</a>
+                  <a class="dropdown-item" href="/anual_pago">Calcular Depósitos</a>
+                  <a class="dropdown-item" href="/anual_venci">Calcular Pagos Vencidos</a>
+                </div>
+            </div>
+      
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Amortización
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" href="/aleman">Sistema Alemán</a>
+                  <a class="dropdown-item" href="/frances">Sistema Francés</a>
+                  <a class="dropdown-item" href="/americano">Sistema Americano</a>
+                  <div class="dropdown-divider"></div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+              <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Tasa de Interés
+              </button>
+              <div class="dropdown-menu">
+                <a class="dropdown-item" href="/calcular_tasa_interes">Tasa de Interés Simple</a>
+                <a class="dropdown-item" href="/tasa_compuesta">Tasa de Interés Compuesta</a>
+                <div class="dropdown-divider"></div>
+              </div>
+            </div>
+         
+          
+        
+
+            <div class="btn-group">
+              <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Tasa interna retorno
+              </button>
+              <div class="dropdown-menu">
+                <a class="dropdown-item" href="/calcular_tir">Calcular tasa interna de retorno</a>
+                <div class="dropdown-divider"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+  </body>
+</html>
+
+

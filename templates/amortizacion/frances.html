@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Capital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="../../static/img/Sisfrances.jpg" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Sistema Francés</h1>
+        <form class="form-container" action="/frances" method="post">
+
+            <label style="color: greenyellow;" for="pres" class="text">Valor del Préstamo:</label>
+            <input type="number" id="pres" name="pres" required><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01"  required><br><br>
+
+            <label style="color: greenyellow;" for="incre" class="text">Número de pagos:</label>
+            <input type="number" id="pagos" name="pagos" required><br><br>
+
+            <select id="capi" name="perio" class="custom-select custom-select-lg mb-3">
+                <option selected>Periodos</option>
+                <option value="1">Mensual</option>
+                <option value="2">Trimestral</option>
+                <option value="3">Cuatrimestral</option>
+                <option value="4">Semestral</option>
+                <option value="5">Anual</option>
+              </select>
+
+            <button class="btn btn-success" type="submit">Tabla de Amortización</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+        </form>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,24 @@
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Resultado del cálculo de TIR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="../../static/img/van.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+
+    <div class="container">
+    <h1 style="color: greenyellow;" class="text">Resultados totales calculo TIR y VAN</h1>
+    <p style="color: greenyellow;" class="text">TIR: {{ tirresul }}</p>
+    <p style="color: greenyellow;" class="text">VAN: {{ vanresul }}</p>
+    <a href="/calcular_tir" class="button">Hacer otro cálculo</a>
+    <a href="/" class="button">Regresar al menú</a>
+    </div>
+
+</body>
+</html>

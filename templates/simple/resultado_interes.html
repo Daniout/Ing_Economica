@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del cálculo de interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 class="text">Resultado del cálculo de interés</h1>
+        <p style="color: greenyellow;" class="text">Capital: {{ capital }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <p style="color: greenyellow;" class="text">Tiempo (años): {{ tiempo_anios }}</p>
+        <p style="color: greenyellow;" class="text">Tiempo (meses): {{ tiempo_meses }}</p>
+        <p style="color: greenyellow;" class="text">Tiempo (días): {{ tiempo_dias }}</p>
+        <p style="color: greenyellow;" class="text">Interés: {{ interes }}</p>
+        <a href="/calcular_interes" class="button">Volver a Calcular Interés</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>

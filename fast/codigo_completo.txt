@@ -1,0 +1,2399 @@
+########## app.py ##########
+
+import datetime
+import math
+from flask import Flask, render_template, request
+import numpy_financial as npf 
+
+app = Flask(__name__, static_folder="static", template_folder="templates")
+
+def calcular_time(fecha_inicio, fecha_fin):
+    # Calcula la diferencia entre las fechas en segundos
+    diferencia_segundos = (fecha_fin - fecha_inicio).total_seconds()
+    # Calcula la diferencia en años (considerando años bisiestos)
+    diferencia_anios = diferencia_segundos / (365.25 * 24 * 3600)  # Aproximadamente 365.25 días en un año
+    return diferencia_anios
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/calcular_valor_futuro', methods=['GET', 'POST'])
+def calcular_valor_futuro():
+    if request.method == 'POST':
+        capital = float(request.form['capital'])
+        tasa_interes_porcentaje = float(request.form['tasa_interes'])
+        fecha_inicio = datetime.datetime.strptime(request.form['fecha_inicio'], '%Y-%m-%d')
+        fecha_fin = datetime.datetime.strptime(request.form['fecha_fin'], '%Y-%m-%d')
+
+        # Convertir la tasa de interés a su equivalente decimal
+        tasa_interes_decimal = tasa_interes_porcentaje / 100
+
+        # Calcular el tiempo en años
+        tiempo = calcular_time(fecha_inicio, fecha_fin)
+
+        # Calcular el valor futuro
+        valor_futuro = round(capital * (1 + (tasa_interes_decimal * tiempo)),2)
+
+        # Renderizar la plantilla con el resultado
+        return render_template('simple/resultado_valor_futuro.html', capital=capital, tasa_interes=tasa_interes_porcentaje, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, valor_futuro=valor_futuro)
+    else:
+        return render_template('simple/calcular_valor_futuro.html')
+
+@app.route('/calcular_interes', methods=['GET', 'POST'])
+def calcular_interes():
+    if request.method == 'POST':
+        capital = float(request.form['capital'])
+        tasa_interes_porcentaje = float(request.form['tasa_interes'])
+        tiempo_anios = int(request.form['tiempo_anios'])
+        tiempo_meses = int(request.form['tiempo_meses'])
+        tiempo_dias = int(request.form['tiempo_dias'])
+
+        # Convertir el tiempo a años
+        tiempo_total = tiempo_anios + (tiempo_meses / 12) + (tiempo_dias / 360)
+        tasa_interes_decimal = tasa_interes_porcentaje / 100
+        # Calcular el interés
+        interes = round ((capital*tasa_interes_decimal*tiempo_total),2)
+
+        # Renderizar la plantilla con el resultado
+        return render_template('simple/resultado_interes.html', capital=capital, tasa_interes=tasa_interes_porcentaje, tiempo_anios=tiempo_anios, tiempo_meses=tiempo_meses, tiempo_dias=tiempo_dias, interes=interes)
+    else:
+        return render_template('simple/calcular_interes.html')
+    
+@app.route('/calcular_capital', methods=['GET', 'POST'])
+def calcular_capital():
+    if request.method == 'POST':
+        interes = float(request.form['interes'])
+        tasa_interes_porcentaje = float(request.form['tasa_interes'])
+        tiempo_anios = int(request.form['tiempo_anios'])
+        tiempo_meses = int(request.form['tiempo_meses'])
+        tiempo_dias = int(request.form['tiempo_dias'])
+
+        # Convertir el tiempo a años
+        tiempo_total = tiempo_anios + (tiempo_meses / 12) + (tiempo_dias / 360)
+        tasa_interes_decimal = tasa_interes_porcentaje / 100
+        # Calcular el capital
+        capital = round((interes / (tasa_interes_decimal * tiempo_total)),2)
+
+        # Renderizar la plantilla con el resultado
+        return render_template('simple/resultado_capital.html', interes=interes, tasa_interes=tasa_interes_porcentaje, tiempo_anios=tiempo_anios, tiempo_meses=tiempo_meses, tiempo_dias=tiempo_dias, capital=capital)
+    else:
+        return render_template('simple/calcular_capital.html')
+    
+@app.route('/calcular_tiempo', methods=['GET', 'POST'])
+def calcular_tiempo():
+    if request.method == 'POST':
+        interes = float(request.form['interes'])
+        tasa_interes_porcentaje = float(request.form['tasa_interes'])
+        capital = float(request.form['capital'])
+        tasa_interes_decimal = tasa_interes_porcentaje / 100
+        # Convertir el tiempo a años
+        tiempo_total= interes/(capital * tasa_interes_decimal)
+
+        # Obtener la parte entera y decimal de los años
+        años_enteros = int(tiempo_total)
+        meses_decimales = (tiempo_total - años_enteros) * 12
+
+        # Obtener la parte entera y decimal de los meses
+        meses_enteros = int(meses_decimales)
+        dias_decimales = (meses_decimales - meses_enteros) * 30  # Estimado de 30 días por mes
+
+        # Obtener la parte entera de los días
+        dias_enteros = int(dias_decimales)
+
+
+        # Renderizar la plantilla con el resultado
+        return render_template('simple/resul_tiempo.html', interes=interes, tasa_interes=tasa_interes_porcentaje, años=años_enteros, meses=meses_enteros, dias=dias_enteros, capital=capital)
+    else:
+        return render_template('simple/calcular_tiempo.html')
+
+@app.route('/calcular_tasa_interes', methods=['GET', 'POST'])
+def calcular_tasa_interes():
+    if request.method == 'POST':
+        capital = float(request.form['capital'])
+        tiempo_anios = int(request.form['tiempo_anios'])
+        tiempo_meses = int(request.form['tiempo_meses'])
+        tiempo_dias = int(request.form['tiempo_dias'])
+        interes = int(request.form['interes'])
+
+        # Convertir el tiempo a años
+        tiempo_total = tiempo_anios + (tiempo_meses / 12) + (tiempo_dias / 360)
+        
+        # Calcular tasa interés
+        tasa = (interes / (capital*tiempo_total)) * 100
+        tasa_interes = "{0:.2f}".format(tasa)
+
+        # Renderizar la plantilla con el resultado
+        return render_template('simple/resul_tasa_interes.html', capital=capital, tasa_interes=tasa_interes, tiempo_anios=tiempo_anios, tiempo_meses=tiempo_meses, tiempo_dias=tiempo_dias, interes=interes)
+    else:
+        return render_template('simple/calcular_tasa_interes.html')
+    
+@app.route('/monto_compuesto', methods=['GET', 'POST'])
+def calcular_monto_compuesto():
+    if request.method == 'POST':
+        capital = float(request.form['capital'])
+        tasa_interes_porcentaje = float(request.form['tasa_interes'])
+        tiempo = int(request.form['tiempo'])
+        capi = request.form.get("capi")
+
+        time = {
+    "1": "Dias",
+    "2": "Meses",
+    "3": "Trimestres",
+    "4": "Cuatrimestres",
+    "5": "Semestres",
+    "6": "Años",
+}
+        
+        capitali = time.get(capi)
+
+
+        # Convertir el tiempo a años
+        tasa_interes_decimal = tasa_interes_porcentaje / 100
+        # Calcular el interés
+        monto = round (((capital*((1 + tasa_interes_decimal))**tiempo)),2)
+
+        # Renderizar la plantilla con el resultado
+        return render_template('compuesto/resul_monto_compuesto.html', capitali=capitali, capital=capital, tasa_interes=tasa_interes_porcentaje, tiempo=tiempo, monto=monto)
+    else:
+        return render_template('compuesto/monto_compuesto.html')
+    
+@app.route('/tiempo_compuesto', methods=['GET', 'POST'])
+def calcular_tiempo_compuesto():
+    if request.method == 'POST':
+        capital = float(request.form['capital'])
+        monto = float(request.form['monto'])
+        tasa_interes_porcentaje = float(request.form['tasa_interes'])
+        capi = request.form.get("capi")
+
+        time = {
+    "1": "Dias",
+    "2": "Meses",
+    "3": "Trimestres",
+    "4": "Cuatrimestres",
+    "5": "Semestres",
+    "6": "Años",
+}
+        
+        capitali = time.get(capi)
+
+
+        # Convertir el tiempo a años
+        tasa_interes_decimal = tasa_interes_porcentaje / 100
+        # Calcular el interés
+        tiempo = round( (math.log(monto) - math.log(capital)) / math.log(1 + tasa_interes_decimal),2)
+
+        # Renderizar la plantilla con el resultado
+        return render_template('compuesto/resul_tiempo_compuesto.html', capitali=capitali, capital=capital, tasa_interes=tasa_interes_porcentaje, tiempo=tiempo, monto=monto)
+    else:
+        return render_template('compuesto/tiempo_compuesto.html')
+    
+
+@app.route('/tasa_compuesta', methods=['GET', 'POST'])
+def calcular_tasa_compuesta():
+    if request.method == 'POST':
+        capital = float(request.form['capital'])
+        monto = float(request.form['monto'])
+        tiempo = float(request.form['tiempo'])
+        capi = request.form.get("capi")
+
+        if capi == "1":
+                valor=365
+                tiempo2=tiempo*valor
+                capitali="Diaria"
+               
+        elif capi == "2":
+                valor=12
+                tiempo2=tiempo * valor
+                capitali="Mensual"
+                
+        elif capi=="3":
+                valor=4
+                tiempo2=tiempo * valor
+                capitali="Trimestral"
+                
+        elif capi == "4":
+                valor=3
+                tiempo2=tiempo * valor
+                capitali="Cuatrimestral"
+                
+        elif capi=="5":
+                valor=2
+                tiempo2=tiempo * valor
+                capitali="Semestral"
+                
+        elif capi=="6":
+                valor=1
+                tiempo2=tiempo * valor
+                capitali="Anual"
+
+  # Calcular el interés
+        tasa_interes_decimal = (((monto/capital)**(1/tiempo2))-1)
+        tasa_interes=round((tasa_interes_decimal * 100),2)
+
+
+
+        # Renderizar la plantilla con el resultado
+        return render_template('compuesto/resul_tasa_compuesta.html', capitali=capitali, capital=capital, tasa_interes=tasa_interes, tiempo=tiempo, monto=monto)
+    else:
+        return render_template('compuesto/tasa_compuesta.html')
+    
+@app.route('/capital_compuesto', methods=['GET', 'POST'])
+def calcular_capital_compuesto():
+    if request.method == 'POST':
+        monto = float(request.form['monto'])
+        tasa_interes_porcentaje = float(request.form['tasa_interes'])
+        tiempo = int(request.form['tiempo'])
+        capi = request.form.get("capi")
+
+        time = {
+    "1": "Dias",
+    "2": "Meses",
+    "3": "Trimestres",
+    "4": "Cuatrimestres",
+    "5": "Semestres",
+    "6": "Años",
+}
+        
+        capitali = time.get(capi)
+
+
+        # Convertir el tiempo a años
+        tasa_interes_decimal = tasa_interes_porcentaje / 100
+        # Calcular el interés
+        capital = round ((monto/((1+tasa_interes_decimal)**tiempo)),2)
+
+        # Renderizar la plantilla con el resultado
+        return render_template('compuesto/resul_capital_compuesto.html', capitali=capitali, capital=capital, tasa_interes=tasa_interes_porcentaje, tiempo=tiempo, monto=monto)
+    else:
+        return render_template('compuesto/capital_compuesto.html')
+    
+
+@app.route('/interes_compuesto', methods=['GET', 'POST'])
+def calcular_interes_compuesto():
+    if request.method == 'POST':
+        capital = float(request.form['capital'])
+        monto = float(request.form['monto'])
+        
+      
+
+      
+        # Calcular el interés
+        interes = round(monto - capital,2)
+
+        # Renderizar la plantilla con el resultado
+        return render_template('compuesto/resul_interes_compuesto.html', capital=capital, monto=monto, ic=interes)
+    else:
+        return render_template('compuesto/interes_compuesto.html')
+    
+    
+
+@app.route('/anual_valor_futuro', methods=['GET', 'POST'])
+def calcular_anual_futuro():
+    if request.method == 'POST':
+        monto = float(request.form['monto'])
+        tasa_interes_porcentaje = float(request.form['tasa_interes'])
+        tiempo = float(request.form['tiempo'])
+        capi = request.form.get("capi")
+
+    
+        
+        if capi == "1":
+                valor=365
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Diaria"
+                
+        elif capi == "2":
+                valor=12
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Mensual"
+               
+        elif capi=="3":
+                valor=4
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Trimestral"
+                
+        elif capi == "4":
+                valor=3
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Cuatrimestral"
+               
+        elif capi=="5":
+                valor=2
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Semestral"
+                
+        elif capi=="6":
+                valor=1
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Anual"
+                
+
+        valor_final=valor*tiempo
+        tasa_interes_decimal = tasa_tiempo/ 100
+
+        
+        valor_fu = round (monto * ((((1 + tasa_interes_decimal)**valor_final) - 1) / tasa_interes_decimal),2)
+       
+
+        # Renderizar la plantilla con el resultado
+        return render_template('anualidad/resul_anual_futuro.html', capitali=capitali, vf=valor_fu, tasa_interes=tasa_interes_porcentaje, tiempo=tiempo, monto=monto)
+    else:
+        return render_template('anualidad/anual_valor_futuro.html')
+    
+
+@app.route('/anual_valor_presente', methods=['GET', 'POST'])
+def calcular_anual_presente():
+    if request.method == 'POST':
+        futuro = float(request.form['monto'])
+        tasa_interes_porcentaje = float(request.form['tasa_interes'])
+        tiempo = float(request.form['tiempo'])
+        capi = request.form.get("capi")
+
+    
+        
+        if capi == "1":
+                valor=365
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Diaria"
+               
+        elif capi == "2":
+                valor=12
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Mensual"
+                
+        elif capi=="3":
+                valor=4
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Trimestral"
+                
+        elif capi == "4":
+                valor=3
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Cuatrimestral"
+                
+        elif capi=="5":
+                valor=2
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Semestral"
+                
+        elif capi=="6":
+                valor=1
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Anual"
+
+        valor_final=valor*tiempo
+        tasa_interes_decimal = tasa_tiempo/ 100
+
+        
+        valor_p = round(futuro * ((1-((1 + tasa_interes_decimal)**-valor_final)) / tasa_interes_decimal),2)
+       
+
+        # Renderizar la plantilla con el resultado
+        return render_template('anualidad/resul_anual_presente.html', capitali=capitali, vp=valor_p, tasa_interes=tasa_interes_porcentaje, tiempo=tiempo, monto=futuro)
+    else:
+        return render_template('anualidad/anual_valor_presente.html')
+    
+@app.route('/anual_pago', methods=['GET', 'POST'])
+def calcular_anual_pago():
+    if request.method == 'POST':
+        monto = float(request.form['vf'])
+        tasa_interes_porcentaje = float(request.form['tasa_interes'])
+        tiempo = float(request.form['tiempo'])
+        capi = request.form.get("capi")
+
+    
+        
+        if capi == "1":
+                valor=365
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Diaria"
+                
+        elif capi == "2":
+                valor=12
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Mensual"
+               
+        elif capi=="3":
+                valor=4
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Trimestral"
+                
+        elif capi == "4":
+                valor=3
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Cuatrimestral"
+               
+        elif capi=="5":
+                valor=2
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Semestral"
+                
+        elif capi=="6":
+                valor=1
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Anual"
+                
+
+        valor_final=valor*tiempo
+        tasa_interes_decimal = tasa_tiempo/ 100
+
+        
+        depo = round (monto * (tasa_interes_decimal / (((1 + tasa_interes_decimal)**valor_final) - 1) ),2)
+       
+
+        # Renderizar la plantilla con el resultado
+        return render_template('anualidad/resul_anual_pago.html', capitali=capitali, pago=depo, tasa_interes=tasa_interes_porcentaje, tiempo=tiempo, monto=monto)
+    else:
+        return render_template('anualidad/anual_pago.html')
+    
+
+
+@app.route('/anual_venci', methods=['GET', 'POST'])
+def calcular_anual_venci():
+    if request.method == 'POST':
+        futuro = float(request.form['monto'])
+        tasa_interes_porcentaje = float(request.form['tasa_interes'])
+        tiempo = float(request.form['tiempo'])
+        capi = request.form.get("capi")
+
+    
+        
+        if capi == "1":
+                valor=365
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Diaria"
+               
+        elif capi == "2":
+                valor=12
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Mensual"
+                
+        elif capi=="3":
+                valor=4
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Trimestral"
+                
+        elif capi == "4":
+                valor=3
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Cuatrimestral"
+                
+        elif capi=="5":
+                valor=2
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Semestral"
+                
+        elif capi=="6":
+                valor=1
+                tasa_tiempo=tasa_interes_porcentaje / valor
+                capitali="Anual"
+
+        valor_final=valor*tiempo
+        tasa_interes_decimal = tasa_tiempo/ 100
+
+        
+        valor_v = round(futuro * ( tasa_interes_decimal / (1-((1 + tasa_interes_decimal)**-valor_final))),2)
+       
+
+        # Renderizar la plantilla con el resultado
+        return render_template('anualidad/resul_anual_venci.html', capitali=capitali, vv=valor_v, tasa_interes=tasa_interes_porcentaje, tiempo=tiempo, monto=futuro)
+    else:
+        return render_template('anualidad/anual_venci.html')
+    
+  
+def calcular_tasa_efectiva(tasa, perio):
+    # Calcula la tasa de interés efectiva trimestral a partir de la tasa nominal
+    if perio == "1":
+                valor=12
+                tasa_real= tasa / valor
+               
+               
+    elif perio == "2":
+                valor=4
+                tasa_real= tasa / valor
+                
+                
+    elif perio=="3":
+                valor=3
+                tasa_real= tasa / valor
+                
+                
+    elif perio == "4":
+                valor=2
+                tasa_real= tasa / valor
+                
+                
+    elif perio=="5":
+                valor=1
+                tasa_real= tasa / valor
+
+                
+    return tasa_real
+
+def calcular_cuota_capital(pres, pagos):
+    # Calcula la cuota de amortización de capital constante
+    cuota_capital = pres / pagos
+    return cuota_capital
+    
+def tabla_aleman(pres, pagos, tasa, perio):
+    # Inicializar la tabla de amortización
+    tabla_amortizacion = []
+
+    # Calcular la tasa de interés efectiva trimestral
+    tasa = calcular_tasa_efectiva(tasa,perio)
+
+    # Calcular la cuota de amortización de capital constante
+    cuota_capital = calcular_cuota_capital(pres, pagos)
+
+    # Inicializar el saldo de capital
+    saldo_capital = pres
+
+    # Calcular la tabla de amortización para cada período
+    for k in range(1, pagos + 1):
+        # Calcular los intereses
+        intereses = saldo_capital * tasa
+
+        # Calcular el pago mensual
+        pago_mensual = cuota_capital + intereses
+
+        # Actualizar el saldo de capital
+        saldo_capital -= cuota_capital
+
+        # Agregar los valores a la tabla de amortización
+        tabla_amortizacion.append([k, pago_mensual, intereses, cuota_capital, saldo_capital])
+
+    return tabla_amortizacion
+
+def tabla_frances(pres, pagos, tasa, perio):
+    tabla_amortizacion = []
+    tasa_real = calcular_tasa_efectiva(tasa,perio)  # Convertir tasa anual a tasa periódica mensual
+    cuota_capital = (pres * tasa) / (1 - (1 + tasa) ** -pagos)
+    
+    saldo_capital = pres
+    
+    
+    for k in range(1, pagos + 1):
+        intereses = saldo_capital * tasa_real
+        pago_mensual = cuota_capital - intereses
+        saldo_capital -= pago_mensual
+
+        tabla_amortizacion.append([k, pago_mensual, intereses, cuota_capital, saldo_capital])
+
+    return tabla_amortizacion
+
+@app.route('/aleman', methods=['GET', 'POST'])
+def aleman():
+    if request.method == 'POST':
+        pres = int(request.form['pres'])
+        interes = float(request.form['tasa_interes'])
+        pagos = int(request.form['pagos'])
+        perio = request.form.get("perio")
+        tasa = interes / 100
+
+        tabla = tabla_aleman(pres, pagos, tasa, perio)
+
+        # Convertir la tabla de amortización a formato HTML
+        tabla_html = "<table border='1'><tr><th>Periodo</th><th>Cuota</th><th>Intereses</th><th>Amortización Capital</th><th>Saldo de Capital</th></tr>"
+        for fila in tabla:
+            tabla_html += "<tr>"
+            for dato in fila:
+                tabla_html += "<td>{}</td>".format(dato)
+            tabla_html += "</tr>"
+        tabla_html += "</table>"
+
+        # Renderizar la plantilla con el resultado
+        return render_template('amortizacion/resul_aleman.html', tabla=tabla_html)
+    else:
+        return render_template('amortizacion/aleman.html')
+    
+
+@app.route('/frances', methods=['GET', 'POST'])
+def frances():
+    if request.method == 'POST':
+        pres = int(request.form['pres'])
+        interes = float(request.form['tasa_interes'])
+        pagos = int(request.form['pagos'])
+        perio = request.form.get("perio")
+        tasa = interes / 100
+
+        tabla = tabla_frances(pres, pagos, tasa, perio)
+
+        # Convertir la tabla de amortización a formato HTML
+        tabla_html = "<table border='1'><tr><th>Periodo</th><th>Amortización Capital</th><th>Intereses</th><th>Cuota</th><th>Saldo de Capital</th></tr>"
+        for fila in tabla:
+            tabla_html += "<tr>"
+            for dato in fila:
+                tabla_html += "<td>{}</td>".format(dato)
+            tabla_html += "</tr>"
+        tabla_html += "</table>"
+
+        # Renderizar la plantilla con el resultado
+        return render_template('amortizacion/resul_frances.html', tabla=tabla_html)
+    else:
+        return render_template('amortizacion/frances.html')
+    
+def calcular_tasa_americano(tasa, perio):
+    # Calcula la tasa de interés efectiva trimestral a partir de la tasa nominal
+    if perio == "1":
+                valor=12
+                tasa_real= tasa / valor
+               
+               
+    elif perio == "2":
+                valor=4
+                tasa_real= tasa / valor
+                
+                
+    elif perio=="3":
+                valor=3
+                tasa_real= tasa / valor
+                
+                
+    elif perio == "4":
+                valor=2
+                tasa_real= tasa / valor
+                
+                
+    elif perio=="5":
+                valor=1
+                tasa_real= tasa / valor
+
+                
+    return valor
+    
+
+def tabla_americano(pres, pagos, tasa, perio):
+    tabla_amortizacion = []
+    # Calcular la tasa de interés efectiva
+    tasa_efectiva = calcular_tasa_efectiva(tasa, perio)
+    
+    # Inicializar el saldo pendiente
+    saldo_pendiente = pres
+
+    # Calcular la tabla de amortización para cada periodo
+    for k in range(1, pagos + 1):
+        # Calcular los intereses
+        intereses = saldo_pendiente * tasa_efectiva
+
+        pago_mensual = (pres * tasa_efectiva) / calcular_tasa_americano(tasa, perio)
+
+        amortizacion = pago_mensual - intereses
+
+        if k == pagos:
+            pago_mensual = saldo_pendiente + intereses
+            amortizacion = saldo_pendiente
+        
+        saldo_pendiente -= amortizacion
+        
+        # Append the data for this period to the table
+        tabla_amortizacion.append([k, pago_mensual, intereses, amortizacion, saldo_pendiente])
+
+    return tabla_amortizacion
+
+
+    
+
+
+@app.route('/americano', methods=['GET', 'POST'])
+def americano():
+    if request.method == 'POST':
+
+        pres = int(request.form['pres'])
+        interes = float(request.form['tasa_interes'])
+        pagos = int(request.form['pagos'])
+        perio = request.form.get("perio")
+        tasa = interes / 100
+
+        tabla = tabla_americano(pres, pagos, tasa, perio)
+
+        # Convertir la tabla de amortización a formato HTML
+        tabla_html = "<table border='1'><tr><th>Periodo</th><th>Cuota</th><th>Intereses</th><th>Amortización Capital</th><th>Saldo de Capital</th></tr>"
+        for fila in tabla:
+            tabla_html += "<tr>"
+            for dato in fila:
+                tabla_html += "<td>{}</td>".format(dato)
+            tabla_html += "</tr>"
+        tabla_html += "</table>"
+
+         
+        return render_template('amortizacion/resul_americano.html', tabla=tabla_html)
+    else:
+        return render_template('amortizacion/americano.html')
+
+
+
+@app.route('/calcular_tir', methods=['GET', 'POST'])
+def calcular_tir():
+    if request.method == 'POST':
+    
+        inversion = float(request.form['inversion_ini'])
+        tipo_interes = float(request.form['tipo_int'])
+        flujos_caja = list(map(float, request.form.getlist('flujos_caja[]')))
+
+        vanresul = calcular_van(flujos_caja, inversion, tipo_interes)
+        tirresul = calcular_tir(flujos_caja, inversion)
+
+        return render_template('tir/resul_tir.html', vanresul=vanresul, tirresul=tirresul)
+    else:
+        return render_template('tir/calcular_tir.html') 
+
+def calcular_van(flujos, inversion, tipo_interes):
+    tipo_interes_decimal = tipo_interes / 100  # Convertir de porcentaje a decimal
+    flujos = [-inversion] + flujos
+    van = npf.npv(tipo_interes_decimal, flujos)
+    return van
+
+def calcular_tir(flujos, inversion):
+    tir = npf.irr([-inversion] + flujos)
+    return tir * 100
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+
+    
+    
+    
+
+########## prueba.py ##########
+
+def calcular_tasa_efectiva(anual_nominal):
+    # Calcula la tasa de interés efectiva trimestral a partir de la tasa nominal
+    i_t = anual_nominal / 1
+    return i_t
+
+def calcular_cuota_capital(Vp, n):
+    # Calcula la cuota de amortización de capital constante
+    cuota_capital = Vp / n
+    return cuota_capital
+
+def generar_tabla_amortizacion(Vp, n, trimestral_nominal):
+    # Inicializar la tabla de amortización
+    tabla_amortizacion = []
+
+    # Calcular la tasa de interés efectiva trimestral
+    i_t = calcular_tasa_efectiva(trimestral_nominal)
+
+    # Calcular la cuota de amortización de capital constante
+    cuota_capital = calcular_cuota_capital(Vp, n)
+
+    # Inicializar el saldo de capital
+    saldo_capital = Vp
+
+    # Calcular la tabla de amortización para cada período
+    for k in range(1, n + 1):
+        # Calcular los intereses
+        intereses = saldo_capital * i_t
+
+        # Calcular el pago mensual
+        pago_mensual = cuota_capital + intereses
+
+        # Actualizar el saldo de capital
+        saldo_capital -= cuota_capital
+
+        # Agregar los valores a la tabla de amortización
+        tabla_amortizacion.append([k, pago_mensual, intereses, cuota_capital, saldo_capital])
+
+    return tabla_amortizacion
+
+# Parámetros del préstamo
+Vp = 20000 # Valor del préstamo
+n = 4          # Número de pagos trimestrales
+trimestral_nominal = 0.06  # Tasa de interés nominal trimestral (20% N-t)
+
+# Generar la tabla de amortización
+tabla = generar_tabla_amortizacion(Vp, n, trimestral_nominal)
+
+# Imprimir la tabla de amortización
+print("Periodo (k)  Pago Mensual (Ak)  Intereses (Ik)  Cuota de Capital (Vk)  Saldo de Capital")
+for fila in tabla:
+    print("{:<12}  {:<19,.2f}  {:<14,.2f}  {:<21,.2f}  {:<17,.2f}".format(*fila))
+
+
+########## fast.py ##########
+
+import os
+
+# Ruta del directorio principal que contiene los subdirectorios y archivos
+directorio_principal = r"G:\ARCHIVOS\Descargas\Ing Economica\Ing Economica"
+
+# Nombre del archivo de texto donde se guardará el código completo
+archivo_txt = "codigo_completo.txt"
+
+# Función para recorrer los archivos en un directorio y subdirectorios
+def recorrer_directorio(ruta):
+    with open(archivo_txt, "w") as f:
+        for carpeta, _, archivos in os.walk(ruta):
+            for archivo in archivos:
+                ruta_completa = os.path.join(carpeta, archivo)
+                # Ignorar archivos .pyc y el archivo de texto donde se guardará el código
+                if ruta_completa.endswith(".html") or (ruta_completa.endswith(".py") and archivo != archivo_txt):
+                    # Escribir el nombre del archivo como encabezado
+                    f.write(f"########## {archivo} ##########\n\n")
+                    # Leer y escribir el contenido del archivo
+                    with open(ruta_completa, "r") as archivo_actual:
+                        f.write(archivo_actual.read())
+                    f.write("\n\n")  # Línea divisoria
+
+# Ejecutar la función para recorrer los directorios y escribir el código en el archivo de texto
+recorrer_directorio(directorio_principal)
+
+print("Se ha completado la escritura del código en el archivo de texto.")
+
+
+########## index.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>Calculadora Financiera</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Referencia al archivo JavaScript -->
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script> 
+</head>
+<body>
+    <div class="container">
+        
+        <h1 class="titulo_color">Calculadora Financiera</h1>
+        <style>
+
+            .body {
+            background-image: url("/static/img/grafico.png");
+            font-family: Arial, sans-serif;
+            margin: 100;
+            height: 60;
+            background-size: 50% 50%;
+            overflow: hidden;/* Reduce el tamaño de la imagen a la mitad */
+            }
+
+
+            .container {
+                     /* Establece el color de fondo para todo el aplicativo */
+                    /* Puedes ajustar este color según tus preferencias */
+                    /* También puedes utilizar una imagen de fondo aquí si lo deseas */
+                    min-height: 25vh; /* Garantiza que el contenedor ocupe al menos el 100% del alto de la ventana */
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+            .menu {
+                position: relative;
+                display: inline-block;
+                width: 130%
+            }
+
+            .submenu {
+                display: none;
+                position: absolute;
+                top: 100%; /* Ajusta la distancia desde la parte superior */
+                left: 0;
+                margin-top: 5px; /* Ajusta la posición para alinearlo con el botón */
+                min-width: 160px;
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+                z-index: 1;
+                background-color: #fff;
+            }
+        
+            .menu-btn:hover + .submenu,
+            .submenu:hover {
+                display: block;
+            }
+        
+            .submenu a {
+                display: block;
+                padding: 8px;
+                text-decoration: none;
+                color: #333;
+            }
+        
+            .submenu a:hover {
+                background-color: #f1f1f1;
+            }
+
+        .sidebar-left
+         {
+            margin: 50px; /* Ajusta los márgenes según tus necesidades */
+            padding: 40px; /* Ajusta el relleno según tus necesidades */
+            background-color: #336eff;
+            float: left;
+            clear: left;
+            text-align: left;
+            
+            /* Ajusta el color de fondo según tus necesidades */
+        }
+
+        .sidebar-right
+         {
+            margin: 50px; /* Ajusta los márgenes según tus necesidades */
+            padding: 35px; /* Ajusta el relleno según tus necesidades */
+            background-color: #27c03f;
+            float: right;
+            clear: right;
+            text-align: left;/* Ajusta el color de fondo según tus necesidades */
+        }
+
+        .footer
+         {
+            margin: 50px; /* Ajusta los márgenes según tus necesidades */
+            padding: 53px; /* Ajusta el relleno según tus necesidades */
+            background-color: #f33131;
+            float: bottom;
+            clear: bottom;
+            text-align: left;/* Ajusta el color de fondo según tus necesidades */
+        }
+
+
+
+        .sidebar-left,
+        .sidebar-right
+        {
+            width: 30%; /* Ajusta el ancho de los laterales según tus necesidades */
+        }
+
+       
+        </style>
+        <div class="menu">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Interés simple
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" href="/calcular_valor_futuro">Calcular Valor Futuro</a>
+                  <a class="dropdown-item" href="/calcular_capital">Calcular Capital</a>
+                  <a class="dropdown-item" href="/calcular_interes">Calcular Interés</a>
+                  <a class="dropdown-item" href="/calcular_tiempo">Calcular Tiempo</a>
+                  <div class="dropdown-divider"></div>
+                </div>
+            </div>
+                    
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Interés Compuesto
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" href="/interes_compuesto">Calcular Interés Compuesto</a>
+                  <a class="dropdown-item" href="/monto_compuesto">Calcular Monto Compuesto</a>
+                  <a class="dropdown-item" href="/tiempo_compuesto">Calcular Tiempo</a>
+                  <a class="dropdown-item" href="/capital_compuesto">Calcular Capital</a>
+                  <div class="dropdown-divider"></div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Anualidades
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" href="/anual_valor_futuro">Calcular Valor Futuro</a>
+                  <a class="dropdown-item" href="/anual_valor_presente">Calcular Valor Actual</a>
+                  <a class="dropdown-item" href="/anual_pago">Calcular Depósitos</a>
+                  <a class="dropdown-item" href="/anual_venci">Calcular Pagos Vencidos</a>
+                </div>
+            </div>
+      
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Amortización
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" href="/aleman">Sistema Alemán</a>
+                  <a class="dropdown-item" href="/frances">Sistema Francés</a>
+                  <a class="dropdown-item" href="/americano">Sistema Americano</a>
+                  <div class="dropdown-divider"></div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+              <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Tasa de Interés
+              </button>
+              <div class="dropdown-menu">
+                <a class="dropdown-item" href="/calcular_tasa_interes">Tasa de Interés Simple</a>
+                <a class="dropdown-item" href="/tasa_compuesta">Tasa de Interés Compuesta</a>
+                <div class="dropdown-divider"></div>
+              </div>
+            </div>
+         
+          
+        
+
+            <div class="btn-group">
+              <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Tasa interna retorno
+              </button>
+              <div class="dropdown-menu">
+                <a class="dropdown-item" href="/calcular_tir">Calcular tasa interna de retorno</a>
+                <div class="dropdown-divider"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+  </body>
+</html>
+
+
+
+
+########## aleman.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Capital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="../../static/img/Sisaleman.jpg" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Sistema Alemán</h1>
+        <form class="form-container" action="/aleman" method="post">
+
+            <label style="color: greenyellow;" for="pres" class="text">Valor del Préstamo:</label>
+            <input type="number" id="pres" name="pres" required><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01"  required><br><br>
+
+            <label style="color: greenyellow;" for="incre" class="text">Número de pagos:</label>
+            <input type="number" id="pagos" name="pagos" required><br><br>
+
+            <select id="capi" name="perio" class="custom-select custom-select-lg mb-3">
+                <option selected>Periodos</option>
+                <option value="1">Mensual</option>
+                <option value="2">Trimestral</option>
+                <option value="3">Cuatrimestral</option>
+                <option value="4">Semestral</option>
+                <option value="5">Anual</option>
+              </select>
+
+            <button class="btn btn-success" type="submit">Tabla de Amortización</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+        </form>
+    </div>
+</body>
+</html>
+
+
+
+########## americano.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Capital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="../../static/img/Sisamericano.jpg" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Sistema Americano</h1>
+        <form class="form-container" action="/americano" method="post">
+
+            <label style="color: greenyellow;" for="pres" class="text">Valor del Préstamo:</label>
+            <input type="number" id="pres" name="pres" required><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01"  required><br><br>
+
+            <label style="color: greenyellow;" for="incre" class="text">Número de pagos:</label>
+            <input type="number" id="pagos" name="pagos" required><br><br>
+
+            <select id="capi" name="perio" class="custom-select custom-select-lg mb-3">
+                <option selected>Periodos</option>
+                <option value="1">Mensual</option>
+                <option value="2">Trimestral</option>
+                <option value="3">Cuatrimestral</option>
+                <option value="4">Semestral</option>
+                <option value="5">Anual</option>
+              </select>
+
+            <button class="btn btn-success" type="submit">Tabla de Amortización</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+        </form>
+    </div>
+</body>
+</html>
+
+
+
+########## frances.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Capital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="../../static/img/Sisfrances.jpg" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Sistema Francés</h1>
+        <form class="form-container" action="/frances" method="post">
+
+            <label style="color: greenyellow;" for="pres" class="text">Valor del Préstamo:</label>
+            <input type="number" id="pres" name="pres" required><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01"  required><br><br>
+
+            <label style="color: greenyellow;" for="incre" class="text">Número de pagos:</label>
+            <input type="number" id="pagos" name="pagos" required><br><br>
+
+            <select id="capi" name="perio" class="custom-select custom-select-lg mb-3">
+                <option selected>Periodos</option>
+                <option value="1">Mensual</option>
+                <option value="2">Trimestral</option>
+                <option value="3">Cuatrimestral</option>
+                <option value="4">Semestral</option>
+                <option value="5">Anual</option>
+              </select>
+
+            <button class="btn btn-success" type="submit">Tabla de Amortización</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+        </form>
+    </div>
+</body>
+</html>
+
+
+
+########## resul_aleman.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla de Amortización</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Tabla de Amortización</h1>
+        <div  style="color: greenyellow;" id="financial-chart">
+            <!-- Incrustar el HTML del gráfico -->
+            {{ tabla | safe }}
+        </div>
+        <a href="/aleman" class="button">Volver</a>
+        <a href="/" class="button">Regresar al Menú Principal</a>
+    </div>
+</body>
+</html>
+
+
+########## resul_americano.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla de Amortización</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Tabla de Amortización</h1>
+        <div  style="color: greenyellow;" id="financial-chart">
+            <!-- Incrustar el HTML del gráfico -->
+            {{ tabla | safe }}
+        </div>
+        <a href="/americano" class="button">Volver</a>
+        <a href="/" class="button">Regresar al Menú Principal</a>
+    </div>
+</body>
+</html>
+
+########## resul_frances.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del cálculo del capital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Tabla de Amortización</h1>
+        <div  style="color: greenyellow;" id="financial-chart">
+            <!-- Incrustar el HTML del gráfico -->
+            {{ tabla | safe }}
+        </div>
+        <a href="/frances" class="button">Volver</a>
+        <a href="/" class="button">Regresar al Menú Principal</a>
+    </div>
+</body>
+</html>
+
+
+########## anual_pago.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Valor Futuro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/DepositosAnual.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+
+<body>
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Depósitos</h1>
+        <form action="/anual_pago" method="post">
+            <label for="capital" style="color: greenyellow;" class="text">Valor Futuro:</label>
+            <input type="number" id="vf" name="vf" step="0.01" required class="input-field"><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" step="0.01" name="tasa_interes" required class="input-field"><br><br>
+
+            <select id="capi" name="capi" class="custom-select custom-select-lg mb-3">
+                <option selected>Capitalización</option>
+                <option value="1">Diario</option>
+                <option value="2">Mensual</option>
+                <option value="3">Trimestral</option>
+                <option value="4">Cuatrimestral</option>
+                <option value="5">Semestral</option>
+                <option value="6">Anual</option>
+              </select>
+
+
+            <label style="color: greenyellow;" for="tiempo" class="text">Tiempo(años)</label>
+            <input type="number" id="tiempo" name="tiempo" step="0.1" required><br><br>
+
+
+            <button class="btn btn-success" type="submit">Calcular Depósito</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+           
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+
+########## anual_valor_futuro.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Valor Futuro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/ValorFuturoActual.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular Valor Futuro Anualidad</h1>
+        <form action="/anual_valor_futuro" method="post">
+            <label for="capital" style="color: greenyellow;" class="text">Depósito</label>
+            <input type="number" id="monto" name="monto" step="0.01" required class="input-field"><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" step="0.01" name="tasa_interes" required class="input-field"><br><br>
+
+            <select id="capi" name="capi" class="custom-select custom-select-lg mb-3">
+                <option selected>Capitalización</option>
+                <option value="1">Diario</option>
+                <option value="2">Mensual</option>
+                <option value="3">Trimestral</option>
+                <option value="4">Cuatrimestral</option>
+                <option value="5">Semestral</option>
+                <option value="6">Anual</option>
+              </select>
+
+
+            <label style="color: greenyellow;" for="tiempo" class="text">Tiempo(años)</label>
+            <input type="number" id="tiempo" name="tiempo" step="0.1" required><br><br>
+
+
+            <button class="btn btn-success" type="submit">Calcular Valor Futuro</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+           
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+
+########## anual_valor_presente.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Valor Futuro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/ValorActualActual.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular Valor Actual Anualidad</h1>
+        <form action="/anual_valor_presente" method="post">
+            <label for="capital" style="color: greenyellow;" class="text">Pago:</label>
+            <input type="number" id="monto" name="monto" step="0.01" required class="input-field"><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01" required class="input-field"><br><br>
+
+            <select id="capi" name="capi" class="custom-select custom-select-lg mb-3">
+                <option selected>Capitalización</option>
+                <option value="1">Diario</option>
+                <option value="2">Mensual</option>
+                <option value="3">Trimestral</option>
+                <option value="4">Cuatrimestral</option>
+                <option value="5">Semestral</option>
+                <option value="6">Anual</option>
+              </select>
+
+
+            <label style="color: greenyellow;" for="tiempo" class="text">Tiempo(años)</label>
+            <input type="number" id="tiempo" name="tiempo" step="0.1" required><br><br>
+
+
+            <button class="btn btn-success" type="submit">Calcular Valor Presente</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+           
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+
+########## anual_venci.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Valor Futuro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/PagoVencidoActual.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular Pago Vencido</h1>
+        <form action="/anual_venci" method="post">
+            <label for="capital" style="color: greenyellow;" class="text">Monto</label>
+            <input type="number" id="monto" name="monto" step="0.01" required class="input-field"><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01" required class="input-field"><br><br>
+
+            <select id="capi" name="capi" class="custom-select custom-select-lg mb-3">
+                <option selected>Capitalización</option>
+                <option value="1">Diario</option>
+                <option value="2">Mensual</option>
+                <option value="3">Trimestral</option>
+                <option value="4">Cuatrimestral</option>
+                <option value="5">Semestral</option>
+                <option value="6">Anual</option>
+              </select>
+
+
+            <label style="color: greenyellow;" for="tiempo" class="text">Tiempo(años)</label>
+            <input type="number" id="tiempo" name="tiempo" step="0.1" required><br><br>
+
+
+            <button class="btn btn-success" type="submit">Calcular Pago Vencido</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+           
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+
+########## resul_anual_futuro.html ##########
+
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Resultado del cálculo de interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+
+      
+
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Valor Futuro Anualidad</h1>
+        <p style="color: greenyellow;" class="text">Depósito: {{ monto }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <p style="color: greenyellow;" class="text">Capitalización: {{capitali}}</p>
+        <p style="color: greenyellow;" class="text">Tiempo: {{ tiempo }} años</p>
+        <p style="color: greenyellow;" class="text">Valor Futuro: {{ vf }}</p>
+        <a href="/anual_valor_futuro" class="button">Volver a Calcular</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+########## resul_anual_pago.html ##########
+
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Resultado del cálculo de interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+
+      
+
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Depósitos</h1>
+        <p style="color: greenyellow;" class="text">Valor Futuro: {{ monto }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <p style="color: greenyellow;" class="text">Capitalización: {{capitali}}</p>
+        <p style="color: greenyellow;" class="text">Tiempo: {{ tiempo }} años</p>
+        <p style="color: greenyellow;" class="text">Depósitos a pagar: {{ pago }}</p>
+        <a href="/anual_valor_futuro" class="button">Volver a Calcular</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+########## resul_anual_presente.html ##########
+
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Resultado del cálculo de interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+
+      
+
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Valor Actual Anualidad</h1>
+        <p style="color: greenyellow;" class="text">Pago: {{ monto }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <p style="color: greenyellow;" class="text">Capitalización: {{capitali}}</p>
+        <p style="color: greenyellow;" class="text">Tiempo: {{ tiempo }} años</p>
+        <p style="color: greenyellow;" class="text">Valor Presente: {{ vp }}</p>
+        <a href="/anual_valor_presente" class="button">Volver a Calcular</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+########## resul_anual_venci.html ##########
+
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Resultado del cálculo de interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+
+      
+
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Pagos Vencidos</h1>
+        <p style="color: greenyellow;" class="text">Valor Actual: {{ monto }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <p style="color: greenyellow;" class="text">Capitalización: {{capitali}}</p>
+        <p style="color: greenyellow;" class="text">Tiempo: {{ tiempo }} años</p>
+        <p style="color: greenyellow;" class="text">Valor a Pagar: {{ vv }}</p>
+        <a href="/anual_valor_presente" class="button">Volver a Calcular</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+########## capital_compuesto.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Valor Futuro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/capital_compuesto.jpg" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular Capital</h1>
+        <form action="/capital_compuesto" method="post">
+            <label for="capital" style="color: greenyellow;" class="text">Monto Compuesto:</label>
+            <input type="number" id="monto" name="monto" required class="input-field"><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01" required class="input-field"><br><br>
+
+            <select id=capi name=capi class="custom-select custom-select-lg mb-3">
+                <option selected>Capitalización</option>
+                <option value="1">Diario</option>
+                <option value="2">Mensual</option>
+                <option value="3">Trimestral</option>
+                <option value="4">Cuatrimestral</option>
+                <option value="5">Semestral</option>
+                <option value="6">Anual</option>
+              </select>
+
+
+            <label style="color: greenyellow;" for="tiempo" class="text">Cuantos</label>
+            <input type="number" id="tiempo" name="tiempo" required><br><br>
+
+
+            <button class="btn btn-success" type="submit">Calcular Capital</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+           
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+
+########## interes_compuesto.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Interés Compuesto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/monto_compuesto.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular Interés Compuesto</h1>
+        <form action="/interes_compuesto" method="post">
+            <label for="capital" style="color: greenyellow;" class="text">Monto Compuesto:</label>
+            <input type="number" id="monto" name="monto" required class="input-field"><br><br>
+
+            <label for="capital" style="color: greenyellow;" class="text">Capital:</label>
+            <input type="number" id="capital" name="capital" required class="input-field"><br><br>
+
+            <button class="btn btn-success" type="submit">Calcular Interés Compuesto</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+           
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+
+########## monto_compuesto.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+     <link rel="stylesheet" href="static\css\styles.css">
+     <title>Calcular Valor Futuro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/monto.jpg" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular Monto</h1>
+        <form action="/monto_compuesto" method="post">
+            <label for="capital" style="color: greenyellow;" class="text">Capital:</label>
+            <input type="number" id="capital" name="capital" required class="input-field"><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01" required class="input-field"><br><br>
+
+            <select id="capi" name="capi" class="custom-select custom-select-lg mb-3">
+                <option selected>Capitalización</option>
+                <option value="1">Diario</option>
+                <option value="2">Mensual</option>
+                <option value="3">Trimestral</option>
+                <option value="4">Cuatrimestral</option>
+                <option value="5">Semestral</option>
+                <option value="6">Anual</option>
+              </select>
+
+
+            <label style="color: greenyellow;" for="tiempo" class="text">Cuantos</label>
+            <input type="number" id="tiempo" name="tiempo" required><br><br>
+
+
+            <button class="btn btn-success" type="submit">Calcular Monto Compuesto</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+           
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+
+########## resul_capital_compuesto.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Resultado del cálculo de interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+
+      
+
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Capital</h1>
+        <p style="color: greenyellow;" class="text">Monto Compuesto: {{ monto }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <p style="color: greenyellow;" class="text">Tiempo: {{ tiempo }} {{capitali}}</p>
+        <p style="color: greenyellow;" class="text">Capital depositado: {{ capital }}</p>
+        <a href="/capital_compuesto" class="button">Volver a Calcular Capital</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+########## resul_interes_compuesto.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Resultado del cálculo de Interés Compuesto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+
+      
+
+    <div class="container">
+        <p style="color: greenyellow;" class="text">Capital: {{ capital }}</p>
+        <p style="color: greenyellow;" class="text">Monto Compuesto: {{ monto }}</p>
+        <p style="color: greenyellow;" class="text">Interés Compuesto: {{ ic }}</p>
+        <a href="/interes_compuesto" class="button">Volver a Calcular Interés Compuesto</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+
+########## resul_monto_compuesto.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Resultado del cálculo de interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+
+      
+
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Monto Compuesto</h1>
+        <p style="color: greenyellow;" class="text">Capital: {{ capital }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <p style="color: greenyellow;" class="text">Tiempo: {{ tiempo }} {{capitali}}</p>
+        <p style="color: greenyellow;" class="text">Monto Compuesto: {{ monto }}</p>
+        <a href="/monto_compuesto" class="button">Volver a Calcular Monto</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+
+########## resul_tasa_compuesta.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Resultado del cálculo de interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+
+      
+
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Tasa de Interés de la operación</h1>
+        <p style="color: greenyellow;" class="text">Capital: {{ capital }}</p>
+        <p style="color: greenyellow;" class="text">Monto Compuesto: {{ monto }}</p>
+        <p style="color: greenyellow;" class="text">Tiempo: {{ tiempo }} {{capitali}}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <a href="/tasa_compuesta" class="button">Volver a Calcular Tasa</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+
+########## resul_tiempo_compuesto.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Resultado del cálculo de interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+
+      
+
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Tiempo de Operación</h1>
+        <p style="color: greenyellow;" class="text">Capital: {{ capital }}</p>
+        <p style="color: greenyellow;" class="text">Monto: {{ monto }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <p style="color: greenyellow;" class="text">Tiempo: {{ tiempo }} {{capitali}} </p>
+        <a href="/tiempo_compuesto" class="button">Volver a Calcular Tiempo</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+
+########## tasa_compuesta.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Valor Futuro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/tasa_compuesta.jpg" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Tasa de Interés</h1>
+        <form action="/tasa_compuesta" method="post">
+            <label for="capital" style="color: greenyellow;" class="text">Capital:</label>
+            <input type="number" id="capital" name="capital" required class="input-field"><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Monto Compuesto:</label>
+            <input type="number" id="monto" name="monto" required class="input-field"><br><br>
+
+            <select id=capi name=capi class="custom-select custom-select-lg mb-3">
+                <option selected>Capitalización</option>
+                <option value="1">Diario</option>
+                <option value="2">Mensual</option>
+                <option value="3">Trimestral</option>
+                <option value="4">Cuatrimestral</option>
+                <option value="5">Semestral</option>
+                <option value="6">Anual</option>
+              </select>
+
+
+            <label style="color: greenyellow;" for="tiempo" class="text">Cuantos</label>
+            <input type="number" id="tiempo" name="tiempo" step="0.01" required><br><br>
+
+
+            <button class="btn btn-success" type="submit">Calcular Tasa de Interés (%)</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+           
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+
+########## tiempo_compuesto.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Valor Futuro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/tiempo_compuesto.jpg" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Tiempo</h1>
+        <form action="/tiempo_compuesto" method="post">
+            <label for="capital" style="color: greenyellow;" class="text">Capital:</label>
+            <input type="number" id="capital" name="capital" required class="input-field"><br><br>
+
+            <label for="capital" style="color: greenyellow;" class="text">Monto:</label>
+            <input type="number" id="monto" name="monto" required class="input-field"><br><br>
+            
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" step="0.01" name="tasa_interes" required class="input-field"><br><br>
+
+            <select id="capi" name="capi" class="custom-select custom-select-lg mb-3">
+                <option selected>Capitalización</option>
+                <option value="1">Diario</option>
+                <option value="2">Mensual</option>
+                <option value="3">Trimestral</option>
+                <option value="4">Cuatrimestral</option>
+                <option value="5">Semestral</option>
+                <option value="6">Anual</option>
+              </select>
+
+
+            <button class="btn btn-success" type="submit">Calcular Tiempo</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+           
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+
+########## calcular_capital.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Capital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="../../static/img/capitalIS.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular Capital</h1>
+        <form class="form-container" action="/calcular_capital" method="post">
+            <label style="color: greenyellow;" for="interes" class="text">Interés:</label>
+            <input type="number" id="interes" name="interes" required><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01"  required><br><br>
+
+            <label style="color: greenyellow;" for="tiempo_anios" class="text">Años:</label>
+            <input type="number" id="tiempo_anios" name="tiempo_anios" required><br><br>
+
+            <label style="color: greenyellow;" for="tiempo_meses" class="text">Meses:</label>
+            <input type="number" id="tiempo_meses" name="tiempo_meses" required><br><br>
+
+            <label style="color: greenyellow;" for="tiempo_dias" class="text">Días:</label>
+            <input type="number" id="tiempo_dias" name="tiempo_dias" required><br><br>
+
+            <button class="btn btn-success" type="submit">Calcular Capital</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+        </form>
+    </div>
+</body>
+</html>
+
+
+
+########## calcular_interes.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/interesIS.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular Interés</h1>
+        <form class="form-container" action="/calcular_interes" method="post">
+            <label style="color: greenyellow;" for="capital" class="text">Capital:</label>
+            <input type="number" id="capital" name="capital" required><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01" required><br><br>
+
+            <label style="color: greenyellow;" for="tiempo_anios" class="text">Años:</label>
+            <input type="number" id="tiempo_anios" name="tiempo_anios" required><br><br>
+
+            <label style="color: greenyellow;" for="tiempo_meses" class="text">Meses:</label>
+            <input type="number" id="tiempo_meses" name="tiempo_meses" required><br><br>
+
+            <label style="color: greenyellow;" for="tiempo_dias" class="text">Días:</label>
+            <input type="number" id="tiempo_dias" name="tiempo_dias" required><br><br>
+
+            <button class="btn btn-success" type="submit">Calcular Interés</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+        </form>
+    </div>
+</body>
+</html>
+
+
+
+
+########## calcular_tasa_interes.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Tasa Interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/cal_tasa_int.jpg" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular Tasa Interés</h1>
+        <form class="form-container" action="/calcular_tasa_interes" method="post">
+            <label style="color: greenyellow;" for="capital" class="text">Capital:</label>
+            <input type="number" id="capital" name="capital" required><br><br>
+
+            <label style="color: greenyellow;" for="interes" class="text">Interés:</label>
+            <input type="number" id="interes" name="interes" step="0.01" required><br><br>
+
+            <label style="color: greenyellow;" for="tiempo_anios" class="text">Años:</label>
+            <input type="number" id="tiempo_anios" name="tiempo_anios" required><br><br>
+
+            <label style="color: greenyellow;" for="tiempo_meses" class="text">Meses:</label>
+            <input type="number" id="tiempo_meses" name="tiempo_meses" required><br><br>
+
+            <label style="color: greenyellow;" for="tiempo_dias" class="text">Días:</label>
+            <input type="number" id="tiempo_dias" name="tiempo_dias" required><br><br>
+
+            <button class="btn btn-success" type="submit">Calcular Tasa de Interés</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+        </form>
+    </div>
+</body>
+</html>
+
+########## calcular_tiempo.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Capital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/tiempoIS.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular Tiempo</h1>
+        <form class="form-container" action="/calcular_tiempo" method="post">
+            <label style="color: greenyellow;" for="capital" class="text">Capital:</label>
+            <input type="number" id="capital" name="capital" required class="input-field"><br><br>
+            <label style="color: greenyellow;" for="interes" class="text">Interés:</label>
+            <input type="number" id="interes" name="interes" step="0.01" required><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01" required><br><br>
+
+            <button class="btn btn-success" type="submit">Calcular Tiempo</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+        </form>
+    </div>
+</body>
+</html>
+
+########## calcular_valor_futuro.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular Valor Futuro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="static/img/valorfuturoIS.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Valor Futuro</h1>
+        <form action="/calcular_valor_futuro" method="post">
+            <label for="capital" style="color: greenyellow;" class="text">Capital:</label>
+            <input type="number" id="capital" name="capital" required class="input-field"><br><br>
+
+            <label style="color: greenyellow;" for="tasa_interes" class="text">Tasa de Interés (%):</label>
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01" required class="input-field"><br><br>
+
+            <label style="color: greenyellow;" for="fecha_inicio" class="text">Fecha de Inicio:</label>
+            <input type="date" id="fecha_inicio" name="fecha_inicio" required class="input-field"><br><br>
+
+            <label style="color: greenyellow;" for="fecha_fin" class="text">Fecha de Fin:</label>
+            <input type="date" id="fecha_fin" name="fecha_fin" required class="input-field"><br><br>
+
+            <button class="btn btn-success" type="submit">Calcular Valor Futuro</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+           
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
+
+
+
+########## resultado_capital.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del cálculo del capital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Resultado del cálculo del capital</h1>
+        <p style="color: greenyellow;" class="text">Interés: {{ interes }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de Interés (%): {{ tasa_interes }}</p>
+        <p style="color: greenyellow;" class="text">Años: {{ tiempo_anios }}</p>
+        <p style="color: greenyellow;" class="text">Meses: {{ tiempo_meses }}</p>
+        <p style="color: greenyellow;" class="text">Días: {{ tiempo_dias }}</p>
+        <p style="color: greenyellow;" class="text">Capital: {{ capital }}</p>
+        <a href="/calcular_capital" class="button">Volver a Calcular capital</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+
+########## resultado_interes.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del cálculo de interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 class="text">Resultado del cálculo de interés</h1>
+        <p style="color: greenyellow;" class="text">Capital: {{ capital }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <p style="color: greenyellow;" class="text">Tiempo (años): {{ tiempo_anios }}</p>
+        <p style="color: greenyellow;" class="text">Tiempo (meses): {{ tiempo_meses }}</p>
+        <p style="color: greenyellow;" class="text">Tiempo (días): {{ tiempo_dias }}</p>
+        <p style="color: greenyellow;" class="text">Interés: {{ interes }}</p>
+        <a href="/calcular_interes" class="button">Volver a Calcular Interés</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+
+########## resultado_valor_futuro.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del cálculo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .resaltado {
+            color: blue; /* Color de resaltado */
+        }
+    </style>
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+
+        <h1 style="color: greenyellow;" class="text">Resultado del cálculo</h1>
+        <p style="color: greenyellow;" class="text">Capital inicial: {{ capital }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <p style="color: greenyellow;" class="text">Fecha de inicio: {{ fecha_inicio }}</p>
+        <p style="color: greenyellow;" class="text">Fecha de fin: {{ fecha_fin }}</p>
+        <p style="color: greenyellow;" class="text">Valor futuro: {{ valor_futuro }}</p>
+        <a href="/calcular_valor_futuro" class="button">Hacer otro cálculo</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+
+
+
+########## resul_tasa_interes.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del cálculo de interés</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Resultado del cálculo de Tasa interés</h1>
+        <p style="color: greenyellow;" class="text">Capital: {{ capital }}</p>
+        <p style="color: greenyellow;" class="text">Interés: {{ interes }}</p>
+        <p style="color: greenyellow;" class="text">Tiempo (años): {{ tiempo_anios }}</p>
+        <p style="color: greenyellow;" class="text">Tiempo (meses): {{ tiempo_meses }}</p>
+        <p style="color: greenyellow;" class="text">Tiempo (días): {{ tiempo_dias }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de interés: {{ tasa_interes }}%</p>
+        <a href="/calcular_tasa_interes" class="button">Volver a Calcular Tasa Interés</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+########## resul_tiempo.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del cálculo del Tiempo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Resultado del cálculo del Tiempo</h1>
+        <p style="color: greenyellow;" class="text">Capital: {{ capital }}</p>
+        <p style="color: greenyellow;" class="text">Interés: {{ interes }}</p>
+        <p style="color: greenyellow;" class="text">Tasa de Interés (%): {{ tasa_interes }}</p>
+        <p style="color: greenyellow;" class="text">Tiempo: {{años}} años, {{ meses }} meses y {{dias}} días </p>
+        <a style="color: greenyellow;" href="/calcular_tiempo" class="button">Volver a Calcular Tiempo</a>
+        <a href="/" class="button">Regresar al menú</a>
+    </div>
+</body>
+</html>
+
+
+########## calcular_tir.html ##########
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular TIR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="../../static/img/tir.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular TIR</h1>
+        <form action="/calcular_tir" method="post">
+            <label style="color: greenyellow;" for="inversion_ini class="text">Inversion inicial:</label>
+            <input type="number" id="inversion_ini" name="inversion_ini" required><br><br>
+
+            <label style="color: greenyellow;" for="tipo_int" class="text">Tipo de interes:</label>
+            <input type="number" id="tipo_int" name="tipo_int" step="0.01" required><br><br>
+
+            <label style="color: greenyellow;" for="flujos_caja" class="text">Flujos de caja</label>
+            <div id="inputs_flujos">
+                <input type="number" name="flujos_caja[]" required><br><br>
+            </div>
+            <button class="btn btn-success" type="button" id="btn_agregar">Añadir año</button>
+            <button class="btn btn-danger" type="button" id="btn_eliminar">Eliminar año</button>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    document.getElementById('btn_agregar').addEventListener('click', function () {
+                        var divInputs = document.getElementById('inputs_flujos');
+                        var nuevoInput = document.createElement('input');
+                        nuevoInput.type = 'number';
+                        nuevoInput.name = 'flujos_caja[]';
+                        nuevoInput.required = true;
+                        divInputs.appendChild(nuevoInput);
+            
+                        var br = document.createElement('br');
+                        divInputs.appendChild(br);
+                    });
+
+                    document.getElementById('btn_eliminar').addEventListener('click', function () {
+                        var divInputs = document.getElementById('inputs_flujos');
+                        var inputs = divInputs.getElementsByTagName('input');
+                        if (inputs.length > 1) { // Solo si hay más de una casilla
+                            divInputs.removeChild(inputs[inputs.length - 1]); // Eliminar el último input
+                            divInputs.removeChild(divInputs.lastElementChild); // Eliminar el último <br>
+                        }
+                    });
+                });
+            </script>
+            
+            <button class="btn btn-success" type="submit">Calcular</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+        </form>
+    </div>
+</body>
+</html>
+
+########## resul_tir.html ##########
+
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Resultado del cálculo de TIR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="../../static/img/van.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+
+    <div class="container">
+    <h1 style="color: greenyellow;" class="text">Resultados totales calculo TIR y VAN</h1>
+    <p style="color: greenyellow;" class="text">TIR: {{ tirresul }}</p>
+    <p style="color: greenyellow;" class="text">VAN: {{ vanresul }}</p>
+    <a href="/calcular_tir" class="button">Hacer otro cálculo</a>
+    <a href="/" class="button">Regresar al menú</a>
+    </div>
+
+</body>
+</html>
+

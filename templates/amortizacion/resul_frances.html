@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del cálculo del capital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Tabla de Amortización</h1>
+        <div  style="color: greenyellow;" id="financial-chart">
+            <!-- Incrustar el HTML del gráfico -->
+            {{ tabla | safe }}
+        </div>
+        <a href="/frances" class="button">Volver</a>
+        <a href="/" class="button">Regresar al Menú Principal</a>
+    </div>
+</body>
+</html>

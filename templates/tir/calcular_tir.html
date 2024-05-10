@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>Calcular TIR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <div class="col-md-6 custom-center-class">
+        <img src="../../static/img/tir.png" alt="Tu Imagen" class="img-fluid">
+    </div>
+</head>
+<body background="static/img/fondo2.jpg">
+    <div class="container">
+        <h1 style="color: greenyellow;" class="text">Calcular TIR</h1>
+        <form action="/calcular_tir" method="post">
+            <label style="color: greenyellow;" for="inversion_ini class="text">Inversion inicial:</label>
+            <input type="number" id="inversion_ini" name="inversion_ini" required><br><br>
+
+            <label style="color: greenyellow;" for="tipo_int" class="text">Tipo de interes:</label>
+            <input type="number" id="tipo_int" name="tipo_int" step="0.01" required><br><br>
+
+            <label style="color: greenyellow;" for="flujos_caja" class="text">Flujos de caja</label>
+            <div id="inputs_flujos">
+                <input type="number" name="flujos_caja[]" required><br><br>
+            </div>
+            <button class="btn btn-success" type="button" id="btn_agregar">Añadir año</button>
+            <button class="btn btn-danger" type="button" id="btn_eliminar">Eliminar año</button>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    document.getElementById('btn_agregar').addEventListener('click', function () {
+                        var divInputs = document.getElementById('inputs_flujos');
+                        var nuevoInput = document.createElement('input');
+                        nuevoInput.type = 'number';
+                        nuevoInput.name = 'flujos_caja[]';
+                        nuevoInput.required = true;
+                        divInputs.appendChild(nuevoInput);
+            
+                        var br = document.createElement('br');
+                        divInputs.appendChild(br);
+                    });
+
+                    document.getElementById('btn_eliminar').addEventListener('click', function () {
+                        var divInputs = document.getElementById('inputs_flujos');
+                        var inputs = divInputs.getElementsByTagName('input');
+                        if (inputs.length > 1) { // Solo si hay más de una casilla
+                            divInputs.removeChild(inputs[inputs.length - 1]); // Eliminar el último input
+                            divInputs.removeChild(divInputs.lastElementChild); // Eliminar el último <br>
+                        }
+                    });
+                });
+            </script>
+            
+            <button class="btn btn-success" type="submit">Calcular</button>
+            <a class="btn btn-success" href="/" role="button">Regresar al menú</a>
+        </form>
+    </div>
+</body>
+</html>
